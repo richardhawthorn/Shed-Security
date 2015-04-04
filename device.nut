@@ -10,6 +10,7 @@ local sounder = hardware.pin5;
 local beacon = hardware.pin7;
 local buzzer = hardware.pin8;
 local adcSensors = hardware.pin9;
+
 local temp = hardware.pin2;
 
 beacon.configure(DIGITAL_OUT);
@@ -58,6 +59,12 @@ local voltage = hardware.voltage();
 server.log(format("Running at %f", voltage));
  
 server.log("Hardware Configured");
+
+function sendMessage(message){
+    
+    agent.send("message", message);
+    
+}
  
 function checkSensors() {
     adcValue = adcSensors.read();
@@ -82,13 +89,13 @@ function checkSensors() {
         door = 1;  
     }
     
-    
     //if the door is opened, start the counter
     if (door == 1){
         if ((alarmCounter == 0) && (alarmMute == 0)){
             alarmCounter = 1;    
             beacon.write(1);
             server.log("door");
+            sendMessage("door");
         }
     } 
     
@@ -154,6 +161,7 @@ function checkSensors() {
     if ((alarmMute) && (button == 0) && (door == 0) && (startReset == 0)){
         alarmMute = 0;
         server.log("reset system");
+        sendMessage("system reset");
         //chirp the buzzer, indicating a reset.
         buzzer.write(1);
         imp.sleep(0.1);
@@ -175,6 +183,7 @@ function checkSensors() {
         if (alarmSounding == 0){
             //if the sounders are just about to be switched on, alert the server
             server.log("sounders!");
+            sendMessage("sounders");
         }
         alarmSounding = 1;
         buzzerConstant = 1; 
@@ -187,6 +196,7 @@ function checkSensors() {
             sounder.write(0); 
             alarmSounding = 0;
             server.log("mute sounder");
+            sendMessage("muted");
         }
     }
     
@@ -196,8 +206,13 @@ function checkSensors() {
     imp.wakeup(1, checkSensors);
 }
  
-server.log("Shed Alarm");
-imp.configure("Shed Alarm", [], []);
+sounder.write(0); 
+beacon.write(0);
+buzzer.write(0);
+
+server.log("Shed");
 checkSensors();
- 
+
+sendMessage("system booting");
+
 //EOF
